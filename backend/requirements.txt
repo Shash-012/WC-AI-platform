@@ -13,3 +13,6 @@ flask
 python-dotenv
 requests
 google-generativeai
+
+# Web Framework
+flask-limiter==4.1.1
