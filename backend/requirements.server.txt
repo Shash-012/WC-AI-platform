@@ -1,10 +1,27 @@
 # requirements.server.txt
 # EC2 server dependencies — Week 4 deployment (t2.micro, Ubuntu 22.04).
 #
-# PyTorch, sentence-transformers, and transformers are intentionally excluded.
+# PyTorch GPU stack is intentionally excluded — t2.micro (1 GB RAM) cannot
+# run the full torch+CUDA install alongside Flask.
+#
 # The FAISS vector store is pre-built locally (HuggingFace all-MiniLM-L6-v2,
-# 384-dim) and SCP'd to EC2. EC2 only loads the index — it never rebuilds it.
-# Install torch separately on local dev via requirements.txt.
+# 384-dim) and committed to the repo. EC2 only loads the index — never builds it.
+#
+# ---------------------------------------------------------------------------
+# IMPORTANT — sentence-transformers must be installed manually on EC2:
+#
+#   Step 1 — install CPU-only torch (~200 MB vs ~2 GB for GPU):
+#   TMPDIR=/home/ubuntu pip install torch --index-url https://download.pytorch.org/whl/cpu
+#
+#   Step 2 — install sentence-transformers without its default GPU torch dep:
+#   TMPDIR=/home/ubuntu pip install sentence-transformers --no-deps
+#
+#   Step 3 — install sentence-transformers runtime deps manually:
+#   TMPDIR=/home/ubuntu pip install transformers tokenizers tqdm numpy huggingface-hub scikit-learn
+#
+# Do NOT run `pip install sentence-transformers` directly on EC2 — it will
+# pull in GPU torch (532 MB) + CUDA libs (~1.5 GB) and fill the 8 GB disk.
+# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # Web framework
@@ -41,7 +58,8 @@ groq==0.37.1
 httpx-sse==0.4.3
 
 # ---------------------------------------------------------------------------
-# Embeddings integration layer (model weights not downloaded on EC2)
+# Embeddings integration layer
+# sentence-transformers installed separately — see instructions above.
 # ---------------------------------------------------------------------------
 langchain-huggingface==1.2.2
 huggingface-hub==1.18.0
@@ -50,7 +68,7 @@ fsspec==2026.4.0
 tqdm==4.68.0
 
 # ---------------------------------------------------------------------------
-# Vector store — FAISS (index loaded from disk, numpy required)
+# Vector store — FAISS (index loaded from disk, never rebuilt on EC2)
 # ---------------------------------------------------------------------------
 faiss-cpu==1.14.2
 numpy==2.4.6
