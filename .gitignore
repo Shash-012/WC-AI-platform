@@ -32,5 +32,8 @@ Thumbs.db
 # FUSE filesystem artifacts (Linux mount leftovers)
 .fuse_hidden*
 
+# Deploy script (contains EC2 IP and PEM path)
+deploy.sh
+
 # Logs
 *.log
