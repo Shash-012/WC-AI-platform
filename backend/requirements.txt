@@ -1,0 +1,15 @@
+# RAG pipeline
+langchain
+langchain-community
+langchain-google-genai   # swap for langchain-openai if using OpenAI
+
+# Embeddings + vector store
+faiss-cpu
+sentence-transformers     # HuggingFace all-MiniLM-L6-v2 (Week 2)
+torch                     # PyTorch backend for sentence-transformers
+
+# API + utils
+flask
+python-dotenv
+requests
+google-generativeai

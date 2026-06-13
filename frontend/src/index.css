@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (toggled on <html class="dark">) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------- Design tokens ---------------- */
+:root {
+  --color-base: #f0f4ff;
+  --color-surface: #ffffff;
+  --color-surface-2: #e6ecfa;
+  --color-border: rgba(10, 22, 40, 0.12);
+  --color-fg: #0a1628;
+  --color-muted: #45577a;
+  --color-accent: #669200; /* light-mode volt (AA: 3.36:1 on base, 4.9:1 w/ navy text) */
+  --color-accent-strong: #8ab800;
+  --color-accent-fg: #0a1628; /* text/icon sitting on the volt fill */
+  --color-accent-text: #4d6b00; /* AA-safe volt for text on light base */
+  --color-ring: rgba(111, 157, 0, 0.45);
+  --hero-overlay: rgba(10, 22, 40, 0.55);
+}
+
+.dark {
+  --color-base: #0a1628;
+  --color-surface: #0f1e36;
+  --color-surface-2: #14264a;
+  --color-border: rgba(255, 255, 255, 0.10);
+  --color-fg: #ffffff;
+  --color-muted: #97a8c7;
+  --color-accent: #ccff00; /* dark-mode volt */
+  --color-accent-strong: #ccff00;
+  --color-accent-fg: #0a1628;
+  --color-accent-text: #ccff00; /* volt reads fine on navy */
+  --color-ring: rgba(204, 255, 0, 0.5);
+  --hero-overlay: rgba(10, 22, 40, 0.7);
+}
+
+/* Map tokens to Tailwind utilities (bg-base, text-fg, border-border, etc.) */
+@theme inline {
+  --color-base: var(--color-base);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-border: var(--color-border);
+  --color-fg: var(--color-fg);
+  --color-muted: var(--color-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-strong: var(--color-accent-strong);
+  --color-accent-fg: var(--color-accent-fg);
+  --color-accent-text: var(--color-accent-text);
+  --color-ring: var(--color-ring);
+
+  --font-display: "Barlow Condensed", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-base);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Text fields show their own focus affordance (inset glow / border),
+   so suppress the hard rectangular outline on them. */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
+/* Thin, themed scrollbar for the chat thread */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+/* ---------------- Animations ---------------- */
+@keyframes shine {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes aurora {
+  0% { transform: translate3d(-10%, -8%, 0) rotate(0deg); }
+  50% { transform: translate3d(10%, 8%, 0) rotate(8deg); }
+  100% { transform: translate3d(-10%, -8%, 0) rotate(0deg); }
+}
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+.animate-fade-up { animation: fadeUp 0.5s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

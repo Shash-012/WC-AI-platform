@@ -1,0 +1,67 @@
+Lionel Messi, Argentina, Inter Miami, Forward. He holds the record for the most Ballon d'Or awards in history and captained Argentina to victory in the 2022 World Cup. Status: Active.
+
+Kylian Mbappé, France, Real Madrid, Forward. He won the Golden Boot at the 2022 World Cup and is one of the youngest players in history to surpass 300 career goals. Status: Active.
+
+Cristiano Ronaldo, Portugal, Al-Nassr, Forward. He is the all-time leading international goalscorer in football history and has won five Ballon d'Or awards. Status: Active.
+
+Vinícius Júnior, Brazil, Real Madrid, Winger. He scored the winning goal in the 2022 Champions League final and has consistently ranked among the top three finalists for the Ballon d'Or. Status: Active.
+
+Jude Bellingham, England, Real Madrid, Midfielder. He became the youngest player to score for England at a World Cup and won the La Liga Player of the Season award in 2024. Status: Active.
+
+Erling Haaland, Norway, Manchester City, Forward. He holds the record for the most goals scored in a single Premier League season and maintains an elite goals-per-game ratio. Status: Active.
+
+Lamine Yamal, Spain, Barcelona, Winger. He became the youngest player to score in a European Championship tournament and is considered one of the fastest-rising talents in world football. Status: Active.
+
+Jamal Musiala, Germany, Bayern Munich, Midfielder. He is one of the youngest players to reach 100 Bundesliga appearances and possesses an elite dribbling success rate. Status: Active.
+
+Moisés Caicedo, Ecuador, Chelsea, Midfielder. He holds the record for one of the highest transfer fees in Premier League history and consistently leads his team in ball recovery statistics. Status: Active.
+
+Son Heung-min, South Korea, Tottenham Hotspur, Forward. He is the first Asian player to win the Premier League Golden Boot and serves as the primary offensive engine for his national team. Status: Active.
+
+Mohamed Salah, Egypt, Liverpool, Forward. He is a three-time Premier League Golden Boot winner and the highest-scoring African player in the history of the Premier League. Status: Active.
+
+Alphonso Davies, Canada, Bayern Munich, Defender. He is recognized as one of the fastest players in football and was the first Canadian to win the UEFA Champions League. Status: Injured (Hamstring; recovery timeline uncertain for World Cup).
+
+Mohammed Kudus, Ghana, West Ham United, Midfielder. He was the highest-scoring Ghanaian player in a single Premier League season and is statistically elite in progressive carries. Status: Active.
+
+Luka Modrić, Croatia, Real Madrid, Midfielder. He won the Golden Ball at the 2018 World Cup and has secured six UEFA Champions League titles during his club career. Status: Active.
+
+Rodri, Spain, Manchester City, Midfielder. He was named the Player of the Tournament at Euro 2024 and is widely regarded as the most effective defensive midfielder in world football. Status: Active.
+
+Virgil van Dijk, Netherlands, Liverpool, Defender. He won the UEFA Men's Player of the Year award in 2019 and is consistently ranked as a top-tier defensive leader. Status: Active.
+
+Jérémy Doku, Ivory Coast, Manchester City, Winger. He leads all wingers in his league for successful dribbles per 90 minutes. Status: Active.
+
+Julio Enciso, Paraguay, Brighton & Hove Albion, Forward. He is one of the youngest South American players to score a Premier League goal and continues to develop as a key tactical playmaker. Status: Active.
+
+Bradley Barcola, France, Paris Saint-Germain, Winger. He has emerged as a high-impact breakout star with exceptional pace and clinical finishing. Status: Injured (Ankle ligament injury; will miss the 2026 World Cup).
+
+Achraf Hakimi, Morocco, Paris Saint-Germain, Defender. He has been named in the FIFA FIFPro World 11 multiple times and is recognized for his elite speed. Status: Injured (Thigh injury; status for tournament pending).
+
+Neymar, Brazil, Santos, Forward. He is the all-time leading goalscorer for the Brazil national team and remains the primary creative catalyst for their attacking system. Status: Injured (Grade two calf strain; expected to miss the start of the tournament).
+
+Darwin Núñez, Uruguay, Liverpool, Forward. He is a central figure in high-intensity systems and maintains a prolific goals-per-match ratio for his country. Status: Active.
+
+Salem Al-Dawsari, Saudi Arabia, Al-Hilal, Midfielder. He scored the famous winning goal against Argentina in the 2022 World Cup and is a perennial contender for the AFC Player of the Year. Status: Active.
+
+Enner Valencia, Ecuador, Internacional, Forward. He is the all-time leading goalscorer for Ecuador and has consistently performed as their most reliable target man. Status: Active.
+
+Sadio Mané, Senegal, Al-Nassr, Forward. He is the all-time leading goalscorer for Senegal and was the driving force behind their historic 2021 Africa Cup of Nations title. Status: Active.
+
+Aymen Hussein, Iraq, Al-Khor, Forward. He was the top scorer in the 2023 AFC Asian Cup and serves as the clinical focal point for Iraq's tactical setup. Status: Returning from recent injury.
+
+Chancel Mbemba, DR Congo, Marseille, Defender. He anchors the defense for DR Congo and is widely considered one of the best defenders on the African continent. Status: Active.
+
+Almoez Ali, Qatar, Al-Duhail, Forward. He holds the record for the most goals scored in a single AFC Asian Cup tournament with nine. Status: Recently underwent leg surgery; recovery ongoing.
+
+Eldor Shomurodov, Uzbekistan, Roma, Forward. He is the all-time leading goalscorer for Uzbekistan and a vital tactical piece for their national squad. Status: Active.
+
+Sardar Azmoun, Iran, Shabab Al-Ahli, Forward. He is one of the most prolific goalscorers in Iranian history and a constant threat in the final third for his national team. Status: Active.
+
+Mehdi Taremi, Iran, Inter Milan, Forward. He has scored over 40 goals for his country and is known for his clinical finishing in high-pressure matches. Status: Active.
+
+Youssef Msakni, Tunisia, Al-Arabi, Forward. He has represented his country in multiple World Cups and continues to be the primary playmaker for the Tunisian national team. Status: Active.
+
+Percy Tau, South Africa, Al Ahly, Forward. He has won the CAF Champions League multiple times and is a key creator for South Africa's counter-attacking style. Status: Active.
+
+Mousa Al-Tamari, Jordan, Montpellier, Winger. He is the first Jordanian player to play in a major league and acts as the primary offensive engine for his nation. Status: Active.

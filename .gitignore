@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+
+# Environment variables (all variants)
+.env
+.env.*
+
+# Pytest
+.pytest_cache/
+
+# Node
+node_modules/
+
+# Vite build output and dev cache
+frontend/dist/
+frontend/.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# FUSE filesystem artifacts (Linux mount leftovers)
+.fuse_hidden*
+
+# Logs
+*.log

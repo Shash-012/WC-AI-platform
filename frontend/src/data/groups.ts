@@ -1,0 +1,85 @@
+// AUTO-GENERATED from backend/data seed files. Do not edit by hand.
+import type { Group } from "./types";
+
+export const groups: Group[] = [
+  {
+    "letter": "A",
+    "teams": [
+      "Mexico",
+      "South Africa",
+      "South Korea",
+      "Czechia"
+    ],
+    "description": "Group A of WC 2026: Group A features Mexico, South Africa, South Korea, and Czechia. Matches for this group will be hosted in Mexico, notably including the tournament's opening match between Mexico and South Africa at the Estadio Azteca in Mexico City."
+  },
+  {
+    "letter": "B",
+    "teams": [
+      "Canada",
+      "Bosnia and Herzegovina",
+      "Qatar",
+      "Switzerland"
+    ],
+    "description": "Group B of WC 2026: Group B consists of Canada, Bosnia and Herzegovina, Qatar, and Switzerland. The host nation Canada will play their opening match against Bosnia and Herzegovina at BMO Field in Toronto, with other group matches also taking place in Vancouver."
+  },
+  {
+    "letter": "C",
+    "teams": [
+      "Brazil",
+      "Morocco",
+      "Haiti",
+      "Scotland"
+    ],
+    "description": "Group C of WC 2026: Comprised of Brazil, Morocco, Haiti, and Scotland, this group will see matches across several U.S. cities, including Philadelphia and Boston. A standout fixture in this group is the clash between traditional powerhouse Brazil and Morocco."
+  },
+  {
+    "letter": "D",
+    "teams": [
+      "United States",
+      "Paraguay",
+      "Australia",
+      "Türkiye"
+    ],
+    "description": "Group D of WC 2026: The United States, Paraguay, Australia, and Türkiye make up Group D. As one of the host nations, the U.S. will begin their tournament campaign against Paraguay at SoFi Stadium in Los Angeles."
+  },
+  {
+    "letter": "E",
+    "teams": [
+      "Germany",
+      "Curaçao",
+      "Ivory Coast",
+      "Ecuador"
+    ],
+    "description": "Group E of WC 2026: Group E features Germany, Curaçao, Ivory Coast, and Ecuador. Matches for this group are scheduled across various venues, with Germany set to open their campaign against tournament debutants Curaçao in Houston."
+  },
+  {
+    "letter": "F",
+    "teams": [
+      "Netherlands",
+      "Japan",
+      "Sweden",
+      "Tunisia"
+    ],
+    "description": "Group F of WC 2026: This group includes the Netherlands, Japan, Sweden, and Tunisia. A highly anticipated matchup in this group is the contest between the Netherlands and Japan, which is scheduled to be played at AT&T Stadium in Dallas."
+  },
+  {
+    "letter": "G",
+    "teams": [
+      "Belgium",
+      "Egypt",
+      "Iran",
+      "New Zealand"
+    ],
+    "description": "Group G of WC 2026: Group G brings together Belgium, Egypt, Iran, and New Zealand. The group will see matches hosted in cities like Seattle and Vancouver, highlighted by the opening encounter between Belgium and Egypt."
+  },
+  {
+    "letter": "H",
+    "teams": [
+      "Spain",
+      "Cape Verde",
+      "Saudi Arabia",
+      "Uruguay"
+    ],
+    "description": "Group H of WC 2026: Rounding out the first eight groups is Group H, consisting of Spain, Cape Verde, Saudi Arabia, and Uruguay. A major highlight here is the match between Spain and tournament debutants Cape Verde, which will take place at Mercedes-Benz Stadium in Atlanta."
+  }
+];
