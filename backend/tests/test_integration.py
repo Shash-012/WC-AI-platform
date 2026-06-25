@@ -501,6 +501,8 @@ class TestFallbackBuildIntegration:
              patch("modules.scout.rag_pipeline.build_vector_store",
                    return_value=mock_built_store) as mock_build, \
              patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever",
+                   return_value=_FakeRetriever()), \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
 
@@ -523,6 +525,8 @@ class TestFallbackBuildIntegration:
                    return_value=[MagicMock()]), \
              patch("modules.scout.rag_pipeline.build_vector_store") as mock_build, \
              patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever",
+                   return_value=_FakeRetriever()), \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
 
@@ -643,3 +647,116 @@ class TestHybridRetrievalIntegration:
         results = retriever.invoke("Argentina World Cup champion")
         contents = [r.page_content for r in results]
         assert len(contents) == len(set(contents)), "Duplicate documents found in results"
+
+
+# ===========================================================================
+# 8. Cross-encoder reranking integration
+# ===========================================================================
+
+@pytest.mark.integration
+class TestCrossEncoderReranking:
+    """
+    Real cross-encoder reranking over real hybrid retrieval results.
+    No LLM call needed — tests the reranker independently of the chain.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, built_store, vector_store_dir):
+        import tempfile
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH",
+                   str(vector_store_dir)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH",
+                   str(vector_store_dir / "chunks.pkl")):
+            from modules.scout.embeddings import load_vector_store
+            self.store = load_vector_store()
+
+        tmp = tempfile.mkdtemp()
+        for name, content in SAMPLE_FILES.items():
+            with open(os.path.join(tmp, name), "w", encoding="utf-8") as fh:
+                fh.write(content)
+        with patch("modules.scout.data_loader.DATA_DIR", tmp):
+            from modules.scout.data_loader import load_documents, split_documents
+            self.chunks = split_documents(load_documents())
+
+    def test_reranker_returns_document_objects(self):
+        """RerankingRetriever must yield Document instances."""
+        from langchain_community.retrievers import BM25Retriever
+        from langchain_classic.retrievers import EnsembleRetriever
+        from modules.scout.reranker import build_reranking_retriever
+
+        bm25 = BM25Retriever.from_documents(self.chunks, k=8)
+        faiss = self.store.as_retriever(search_kwargs={"k": 8})
+        ensemble = EnsembleRetriever(
+            retrievers=[bm25, faiss], weights=[0.6, 0.4], c=60
+        )
+        retriever = build_reranking_retriever(ensemble)
+
+        results = retriever.invoke("Who won the World Cup?")
+        assert len(results) > 0
+        assert all(hasattr(r, "page_content") for r in results)
+
+    def test_reranker_limits_results_to_top_n(self):
+        """Result count must not exceed RERANK_TOP_N (default 5)."""
+        from langchain_community.retrievers import BM25Retriever
+        from langchain_classic.retrievers import EnsembleRetriever
+        from modules.scout.reranker import build_reranking_retriever, RERANK_TOP_N
+
+        bm25 = BM25Retriever.from_documents(self.chunks, k=8)
+        faiss = self.store.as_retriever(search_kwargs={"k": 8})
+        ensemble = EnsembleRetriever(
+            retrievers=[bm25, faiss], weights=[0.6, 0.4], c=60
+        )
+        retriever = build_reranking_retriever(ensemble)
+
+        results = retriever.invoke("Argentina champion")
+        assert len(results) <= RERANK_TOP_N
+
+    def test_reranked_results_contain_no_duplicates(self):
+        """After reranking, no two results should have the same page_content."""
+        from langchain_community.retrievers import BM25Retriever
+        from langchain_classic.retrievers import EnsembleRetriever
+        from modules.scout.reranker import build_reranking_retriever
+
+        bm25 = BM25Retriever.from_documents(self.chunks, k=8)
+        faiss = self.store.as_retriever(search_kwargs={"k": 8})
+        ensemble = EnsembleRetriever(
+            retrievers=[bm25, faiss], weights=[0.6, 0.4], c=60
+        )
+        retriever = build_reranking_retriever(ensemble)
+
+        results = retriever.invoke("Messi Golden Ball")
+        contents = [r.page_content for r in results]
+        assert len(contents) == len(set(contents))
+
+    def test_relevant_content_surfaces_in_reranked_results(self):
+        """A targeted query must surface the matching content after reranking."""
+        from langchain_community.retrievers import BM25Retriever
+        from langchain_classic.retrievers import EnsembleRetriever
+        from modules.scout.reranker import build_reranking_retriever
+
+        bm25 = BM25Retriever.from_documents(self.chunks, k=8)
+        faiss = self.store.as_retriever(search_kwargs={"k": 8})
+        ensemble = EnsembleRetriever(
+            retrievers=[bm25, faiss], weights=[0.6, 0.4], c=60
+        )
+        retriever = build_reranking_retriever(ensemble)
+
+        results = retriever.invoke("Kylian Mbappé hat-trick in the final")
+        combined = " ".join(r.page_content for r in results).lower()
+        assert "mbapp" in combined or "hat-trick" in combined
+
+    def test_custom_top_n_limits_reranked_output(self):
+        """Passing top_n=2 must return at most 2 documents."""
+        from langchain_community.retrievers import BM25Retriever
+        from langchain_classic.retrievers import EnsembleRetriever
+        from modules.scout.reranker import build_reranking_retriever
+
+        bm25 = BM25Retriever.from_documents(self.chunks, k=8)
+        faiss = self.store.as_retriever(search_kwargs={"k": 8})
+        ensemble = EnsembleRetriever(
+            retrievers=[bm25, faiss], weights=[0.6, 0.4], c=60
+        )
+        retriever = build_reranking_retriever(ensemble, top_n=2)
+
+        results = retriever.invoke("Morocco semi-finals")
+        assert len(results) <= 2

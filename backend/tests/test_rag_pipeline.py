@@ -42,8 +42,8 @@ def _mock_chain():
 def _patched_get_chain():
     """
     Patches load_vector_store, load_chunks, BM25Retriever, EnsembleRetriever,
-    and ConversationalRetrievalChain.from_llm so get_chain() runs without any
-    real API key, disk IO, or pydantic validation.
+    build_reranking_retriever, and ConversationalRetrievalChain.from_llm so
+    get_chain() runs without any real API key, disk IO, or pydantic validation.
     Yields (mock_store, mock_llm_cls, mock_chain_instance).
     """
     mock_store = _mock_vector_store()
@@ -56,12 +56,14 @@ def _patched_get_chain():
                return_value=mock_chunks), \
          patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
          patch("modules.scout.rag_pipeline.EnsembleRetriever") as mock_ensemble, \
+         patch("modules.scout.rag_pipeline.build_reranking_retriever") as mock_reranker, \
          patch("modules.scout.rag_pipeline.ChatGroq") as mock_llm_cls, \
          patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
 
         mock_llm_cls.return_value = MagicMock()
         mock_bm25.from_documents.return_value = MagicMock()
         mock_ensemble.return_value = MagicMock()
+        mock_reranker.return_value = MagicMock()
         mock_crc.from_llm.return_value = mock_chain_instance
 
         yield mock_store, mock_llm_cls, mock_chain_instance
@@ -99,6 +101,7 @@ class TestGetChain:
                    return_value=mock_chunks), \
              patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
              patch("modules.scout.rag_pipeline.EnsembleRetriever") as mock_ensemble, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever") as mock_reranker, \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
             mock_store = _mock_vector_store()
@@ -106,6 +109,7 @@ class TestGetChain:
                        return_value=mock_store):
                 mock_bm25.from_documents.return_value = MagicMock()
                 mock_ensemble.return_value = MagicMock()
+                mock_reranker.return_value = MagicMock()
                 mock_crc.from_llm.return_value = _mock_chain()
                 from modules.scout.rag_pipeline import get_chain
                 get_chain()
@@ -135,10 +139,12 @@ class TestGetChain:
                    return_value=[MagicMock()]), \
              patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
              patch("modules.scout.rag_pipeline.EnsembleRetriever") as mock_ensemble, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever") as mock_reranker, \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
             mock_bm25.from_documents.return_value = MagicMock()
             mock_ensemble.return_value = MagicMock()
+            mock_reranker.return_value = MagicMock()
             mock_crc.from_llm.return_value = _mock_chain()
             from modules.scout.rag_pipeline import get_chain
             get_chain()
@@ -153,10 +159,12 @@ class TestGetChain:
                    return_value=[MagicMock()]), \
              patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
              patch("modules.scout.rag_pipeline.EnsembleRetriever") as mock_ensemble, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever") as mock_reranker, \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
             mock_bm25.from_documents.return_value = MagicMock()
             mock_ensemble.return_value = MagicMock()
+            mock_reranker.return_value = MagicMock()
             mock_crc.from_llm.return_value = _mock_chain()
             from modules.scout.rag_pipeline import get_chain
             get_chain()
@@ -177,10 +185,12 @@ class TestGetChain:
                    return_value=[MagicMock()]) as mock_load_chunks, \
              patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
              patch("modules.scout.rag_pipeline.EnsembleRetriever") as mock_ensemble, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever") as mock_reranker, \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
             mock_bm25.from_documents.return_value = MagicMock()
             mock_ensemble.return_value = MagicMock()
+            mock_reranker.return_value = MagicMock()
             mock_crc.from_llm.return_value = _mock_chain()
             from modules.scout.rag_pipeline import get_chain
             get_chain()
@@ -203,10 +213,12 @@ class TestGetChain:
                    return_value=mock_store) as mock_build, \
              patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
              patch("modules.scout.rag_pipeline.EnsembleRetriever") as mock_ensemble, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever") as mock_reranker, \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
             mock_bm25.from_documents.return_value = MagicMock()
             mock_ensemble.return_value = MagicMock()
+            mock_reranker.return_value = MagicMock()
             mock_crc.from_llm.return_value = _mock_chain()
             from modules.scout.rag_pipeline import get_chain
             get_chain()
@@ -219,14 +231,40 @@ class TestGetChain:
                    return_value=[MagicMock()]), \
              patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
              patch("modules.scout.rag_pipeline.EnsembleRetriever") as mock_ensemble, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever") as mock_reranker, \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
             mock_bm25.from_documents.return_value = MagicMock()
             mock_ensemble.return_value = MagicMock()
+            mock_reranker.return_value = MagicMock()
             mock_crc.from_llm.return_value = _mock_chain()
             from modules.scout.rag_pipeline import get_chain
             get_chain()
         mock_load.assert_called_once()
+
+    def test_reranker_wraps_ensemble_retriever(self):
+        """build_reranking_retriever must be called with the EnsembleRetriever output."""
+        with patch("modules.scout.rag_pipeline.load_vector_store",
+                   return_value=_mock_vector_store()), \
+             patch("modules.scout.rag_pipeline.load_chunks",
+                   return_value=[MagicMock()]), \
+             patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
+             patch("modules.scout.rag_pipeline.EnsembleRetriever") as mock_ensemble, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever") as mock_reranker, \
+             patch("modules.scout.rag_pipeline.ChatGroq"), \
+             patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
+            mock_bm25.from_documents.return_value = MagicMock()
+            ensemble_instance = MagicMock()
+            mock_ensemble.return_value = ensemble_instance
+            mock_reranker.return_value = MagicMock()
+            mock_crc.from_llm.return_value = _mock_chain()
+            from modules.scout.rag_pipeline import get_chain
+            get_chain()
+
+        mock_reranker.assert_called_once()
+        assert mock_reranker.call_args.args[0] is ensemble_instance, (
+            "build_reranking_retriever must receive the EnsembleRetriever instance"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -267,10 +305,12 @@ class TestSystemPrompt:
                    return_value=[MagicMock()]), \
              patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
              patch("modules.scout.rag_pipeline.EnsembleRetriever") as mock_ensemble, \
+             patch("modules.scout.rag_pipeline.build_reranking_retriever") as mock_reranker, \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
             mock_bm25.from_documents.return_value = MagicMock()
             mock_ensemble.return_value = MagicMock()
+            mock_reranker.return_value = MagicMock()
             mock_crc.from_llm.return_value = _mock_chain()
             from modules.scout.rag_pipeline import get_chain
             get_chain()

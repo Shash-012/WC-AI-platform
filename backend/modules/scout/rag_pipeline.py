@@ -16,6 +16,7 @@ from langchain_groq import ChatGroq
 
 from .data_loader import load_documents, split_documents
 from .embeddings import build_vector_store, load_vector_store, load_chunks
+from .reranker import build_reranking_retriever
 import time
 
 load_dotenv()
@@ -48,11 +49,15 @@ def get_chain():
     # weights=[0.6, 0.4] → keyword search weighted higher; c=60 is the RRF constant.
     bm25_retriever = BM25Retriever.from_documents(chunks, k=8)
     faiss_retriever = store.as_retriever(search_kwargs={"k": 8})
-    retriever = EnsembleRetriever(
+    ensemble_retriever = EnsembleRetriever(
         retrievers=[bm25_retriever, faiss_retriever],
         weights=[0.6, 0.4],
         c=60,
     )
+
+    # Cross-encoder reranking: scores each (query, doc) pair jointly for
+    # higher precision. Reranks the 8+8 candidates down to top 5.
+    retriever = build_reranking_retriever(ensemble_retriever)
 
     llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0)
 
