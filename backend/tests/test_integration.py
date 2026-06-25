@@ -18,6 +18,17 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
+
+
+# ---------------------------------------------------------------------------
+# Minimal BaseRetriever stub — satisfies pydantic v2 type validation so
+# EnsembleRetriever can be constructed without calling real retrieval logic.
+# ---------------------------------------------------------------------------
+
+class _FakeRetriever(BaseRetriever):
+    def _get_relevant_documents(self, query: str) -> list[Document]:
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -85,7 +96,9 @@ def api_app():
 
 @pytest.fixture
 def api_client(api_app):
-    """Fresh test client; resets the chain cache before each test."""
+    """Fresh test client; resets the chain cache and rate limiter before each test."""
+    from app import limiter
+    limiter.reset()
     import modules.scout.routes as routes_module
     routes_module._chain = None
     return api_app.test_client()
@@ -475,7 +488,9 @@ class TestFallbackBuildIntegration:
         return a valid chain without raising.
         """
         mock_built_store = MagicMock()
-        mock_built_store.as_retriever.return_value = MagicMock()
+        # Return a real BaseRetriever subclass so EnsembleRetriever passes
+        # pydantic v2 type validation without needing to patch the class itself.
+        mock_built_store.as_retriever.return_value = _FakeRetriever()
 
         with patch("modules.scout.rag_pipeline.load_vector_store",
                    side_effect=Exception("no store")), \
@@ -485,9 +500,11 @@ class TestFallbackBuildIntegration:
                    return_value=[Document(page_content="test", metadata={"source": "t.txt"})]), \
              patch("modules.scout.rag_pipeline.build_vector_store",
                    return_value=mock_built_store) as mock_build, \
+             patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
 
+            mock_bm25.from_documents.return_value = _FakeRetriever()
             mock_crc.from_llm.return_value = MagicMock()
             from modules.scout.rag_pipeline import get_chain
             chain = get_chain()
@@ -498,14 +515,18 @@ class TestFallbackBuildIntegration:
     def test_get_chain_uses_existing_store_when_available(self):
         """When load_vector_store succeeds, build_vector_store must NOT be called."""
         mock_store = MagicMock()
-        mock_store.as_retriever.return_value = MagicMock()
+        mock_store.as_retriever.return_value = _FakeRetriever()
 
         with patch("modules.scout.rag_pipeline.load_vector_store",
                    return_value=mock_store), \
+             patch("modules.scout.rag_pipeline.load_chunks",
+                   return_value=[MagicMock()]), \
              patch("modules.scout.rag_pipeline.build_vector_store") as mock_build, \
+             patch("modules.scout.rag_pipeline.BM25Retriever") as mock_bm25, \
              patch("modules.scout.rag_pipeline.ChatGroq"), \
              patch("modules.scout.rag_pipeline.ConversationalRetrievalChain") as mock_crc:
 
+            mock_bm25.from_documents.return_value = _FakeRetriever()
             mock_crc.from_llm.return_value = MagicMock()
             from modules.scout.rag_pipeline import get_chain
             get_chain()
@@ -524,9 +545,101 @@ class TestFallbackBuildIntegration:
         empty_vs = tmp_path / "fallback_vs"
         empty_vs.mkdir()
 
-        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(empty_vs)):
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(empty_vs)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH",
+                   str(empty_vs / "chunks.pkl")):
             from modules.scout.embeddings import load_vector_store
             store = load_vector_store(chunks=sample_documents)
 
         assert isinstance(store, FAISS)
         assert any(empty_vs.iterdir()), "Built index should be persisted"
+
+
+# ===========================================================================
+# 7. Hybrid retrieval integration
+# ===========================================================================
+
+@pytest.mark.integration
+class TestHybridRetrievalIntegration:
+    """
+    Real EnsembleRetriever with BM25 + FAISS on sample data.
+    Verifies the full hybrid path end-to-end without an LLM call.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, built_store, vector_store_dir):
+        import tempfile, os
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH",
+                   str(vector_store_dir)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH",
+                   str(vector_store_dir / "chunks.pkl")):
+            from modules.scout.embeddings import load_vector_store
+            self.store = load_vector_store()
+
+        tmp = tempfile.mkdtemp()
+        for name, content in SAMPLE_FILES.items():
+            with open(os.path.join(tmp, name), "w", encoding="utf-8") as f:
+                f.write(content)
+        with patch("modules.scout.data_loader.DATA_DIR", tmp):
+            from modules.scout.data_loader import load_documents, split_documents
+            self.chunks = split_documents(load_documents())
+
+    def test_ensemble_retriever_returns_documents(self):
+        """EnsembleRetriever must return Document objects for a given query."""
+        from langchain_community.retrievers import BM25Retriever
+        from langchain_classic.retrievers import EnsembleRetriever
+
+        bm25 = BM25Retriever.from_documents(self.chunks, k=4)
+        faiss = self.store.as_retriever(search_kwargs={"k": 4})
+        retriever = EnsembleRetriever(
+            retrievers=[bm25, faiss], weights=[0.6, 0.4], c=60
+        )
+
+        results = retriever.invoke("Who won the World Cup?")
+        assert len(results) > 0
+        assert all(hasattr(r, "page_content") for r in results)
+
+    def test_keyword_match_surfaces_in_results(self):
+        """A keyword query should surface the document containing that exact term."""
+        from langchain_community.retrievers import BM25Retriever
+        from langchain_classic.retrievers import EnsembleRetriever
+
+        bm25 = BM25Retriever.from_documents(self.chunks, k=4)
+        faiss = self.store.as_retriever(search_kwargs={"k": 4})
+        retriever = EnsembleRetriever(
+            retrievers=[bm25, faiss], weights=[0.6, 0.4], c=60
+        )
+
+        results = retriever.invoke("Mbapp\u00e9 hat-trick")
+        combined = " ".join(r.page_content for r in results).lower()
+        assert "mbapp\u00e9" in combined or "mbappe" in combined.replace("\u00e9", "e")
+
+    def test_semantic_match_surfaces_in_results(self):
+        """A paraphrase query (no exact keyword) should still return relevant docs."""
+        from langchain_community.retrievers import BM25Retriever
+        from langchain_classic.retrievers import EnsembleRetriever
+
+        bm25 = BM25Retriever.from_documents(self.chunks, k=4)
+        faiss = self.store.as_retriever(search_kwargs={"k": 4})
+        retriever = EnsembleRetriever(
+            retrievers=[bm25, faiss], weights=[0.6, 0.4], c=60
+        )
+
+        results = retriever.invoke("first African side in the last four")
+        combined = " ".join(r.page_content for r in results).lower()
+        assert "morocco" in combined or "african" in combined
+
+    def test_no_duplicate_documents_in_results(self):
+        """RRF fusion must deduplicate -- no page_content should appear twice."""
+        from langchain_community.retrievers import BM25Retriever
+        from langchain_classic.retrievers import EnsembleRetriever
+
+        bm25 = BM25Retriever.from_documents(self.chunks, k=4)
+        faiss = self.store.as_retriever(search_kwargs={"k": 4})
+        retriever = EnsembleRetriever(
+            retrievers=[bm25, faiss], weights=[0.6, 0.4], c=60
+        )
+
+        results = retriever.invoke("Argentina World Cup champion")
+        contents = [r.page_content for r in results]
+        assert len(contents) == len(set(contents)), "Duplicate documents found in results"

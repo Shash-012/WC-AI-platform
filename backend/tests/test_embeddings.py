@@ -110,8 +110,105 @@ class TestLoadVectorStore:
         empty_dir = tmp_path / "vs2"
         empty_dir.mkdir()
 
-        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(empty_dir)):
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(empty_dir)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH",
+                   str(empty_dir / "chunks.pkl")):
             from modules.scout.embeddings import load_vector_store
             load_vector_store(chunks=sample_documents)
 
         assert any(empty_dir.iterdir()), "FAISS files should be written to disk"
+
+
+# ---------------------------------------------------------------------------
+# TestSaveChunks / TestLoadChunks
+# ---------------------------------------------------------------------------
+
+class TestSaveChunks:
+    def test_creates_chunks_pkl_file(self, tmp_path, sample_documents):
+        """save_chunks must write chunks.pkl inside VECTOR_STORE_PATH."""
+        chunks_path = tmp_path / "chunks.pkl"
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(tmp_path)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH", str(chunks_path)):
+            from modules.scout.embeddings import save_chunks
+            save_chunks(sample_documents)
+
+        assert chunks_path.exists()
+
+    def test_creates_directory_if_missing(self, tmp_path, sample_documents):
+        """save_chunks must create VECTOR_STORE_PATH if it doesn't exist yet."""
+        new_dir = tmp_path / "new_vs"
+        chunks_path = new_dir / "chunks.pkl"
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(new_dir)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH", str(chunks_path)):
+            from modules.scout.embeddings import save_chunks
+            save_chunks(sample_documents)
+
+        assert chunks_path.exists()
+
+    def test_saved_content_is_non_empty(self, tmp_path, sample_documents):
+        """The pickle file should not be empty."""
+        chunks_path = tmp_path / "chunks.pkl"
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(tmp_path)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH", str(chunks_path)):
+            from modules.scout.embeddings import save_chunks
+            save_chunks(sample_documents)
+
+        assert chunks_path.stat().st_size > 0
+
+
+class TestLoadChunks:
+    def test_load_returns_same_documents(self, tmp_path, sample_documents):
+        """Round-trip: save then load must return equivalent documents."""
+        chunks_path = tmp_path / "chunks.pkl"
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(tmp_path)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH", str(chunks_path)):
+            from modules.scout.embeddings import save_chunks, load_chunks
+            save_chunks(sample_documents)
+            loaded = load_chunks()
+
+        assert len(loaded) == len(sample_documents)
+        assert [d.page_content for d in loaded] == \
+               [d.page_content for d in sample_documents]
+
+    def test_load_preserves_metadata(self, tmp_path, sample_documents):
+        """Metadata (e.g. source filename) must survive the pickle round-trip."""
+        chunks_path = tmp_path / "chunks.pkl"
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(tmp_path)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH", str(chunks_path)):
+            from modules.scout.embeddings import save_chunks, load_chunks
+            save_chunks(sample_documents)
+            loaded = load_chunks()
+
+        for orig, got in zip(sample_documents, loaded):
+            assert got.metadata == orig.metadata
+
+    def test_load_raises_when_file_missing(self, tmp_path):
+        """load_chunks must raise FileNotFoundError when chunks.pkl doesn't exist."""
+        missing = tmp_path / "chunks.pkl"
+        with patch("modules.scout.embeddings.CHUNKS_PATH", str(missing)):
+            from modules.scout.embeddings import load_chunks
+            with pytest.raises(FileNotFoundError):
+                load_chunks()
+
+
+class TestBuildVectorStoreAlsoSavesChunks:
+    def test_build_writes_chunks_pkl(self, tmp_path, sample_documents):
+        """build_vector_store must also persist chunks.pkl for BM25 reuse."""
+        chunks_path = tmp_path / "chunks.pkl"
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(tmp_path)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH", str(chunks_path)):
+            from modules.scout.embeddings import build_vector_store
+            build_vector_store(sample_documents)
+
+        assert chunks_path.exists(), "chunks.pkl must be written by build_vector_store"
+
+    def test_chunks_pkl_content_matches_input(self, tmp_path, sample_documents):
+        """Chunks saved during build must match the documents passed in."""
+        chunks_path = tmp_path / "chunks.pkl"
+        with patch("modules.scout.embeddings.VECTOR_STORE_PATH", str(tmp_path)), \
+             patch("modules.scout.embeddings.CHUNKS_PATH", str(chunks_path)):
+            from modules.scout.embeddings import build_vector_store, load_chunks
+            build_vector_store(sample_documents)
+            loaded = load_chunks()
+
+        assert len(loaded) == len(sample_documents)

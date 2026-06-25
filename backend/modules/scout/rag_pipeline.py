@@ -10,10 +10,12 @@ cached chain instance can serve concurrent requests without any cross-talk.
 from dotenv import load_dotenv
 from langchain_classic.chains.conversational_retrieval.base import ConversationalRetrievalChain
 from langchain_classic.prompts import PromptTemplate
+from langchain_classic.retrievers import EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
 from langchain_groq import ChatGroq
 
 from .data_loader import load_documents, split_documents
-from .embeddings import build_vector_store, load_vector_store
+from .embeddings import build_vector_store, load_vector_store, load_chunks
 import time
 
 load_dotenv()
@@ -35,11 +37,22 @@ Answer:"""
 def get_chain():
     try:
         store = load_vector_store()
+        chunks = load_chunks()
     except Exception:
         print("Vector store not found — building from data files...")
         docs = load_documents()
         chunks = split_documents(docs)
-        store = build_vector_store(chunks)
+        store = build_vector_store(chunks)  # also persists chunks via save_chunks
+
+    # Hybrid retrieval: BM25 (keyword) + FAISS (semantic), fused via RRF.
+    # weights=[0.6, 0.4] → keyword search weighted higher; c=60 is the RRF constant.
+    bm25_retriever = BM25Retriever.from_documents(chunks, k=8)
+    faiss_retriever = store.as_retriever(search_kwargs={"k": 8})
+    retriever = EnsembleRetriever(
+        retrievers=[bm25_retriever, faiss_retriever],
+        weights=[0.6, 0.4],
+        c=60,
+    )
 
     llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0)
 
@@ -47,7 +60,7 @@ def get_chain():
     # as an input on every call, which keeps it stateless and thread-safe.
     return ConversationalRetrievalChain.from_llm(
         llm=llm,
-        retriever=store.as_retriever(search_kwargs={"k": 8}),
+        retriever=retriever,
         return_source_documents=False,
         combine_docs_chain_kwargs={"prompt": SYSTEM_PROMPT},
         verbose=True

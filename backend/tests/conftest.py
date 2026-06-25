@@ -73,9 +73,11 @@ def app():
 @pytest.fixture
 def client(app):
     """
-    Flask test client. Resets the module-level _chain cache before each
-    test so tests don't bleed into each other.
+    Flask test client. Resets the module-level _chain cache and clears the
+    rate limiter storage before each test so tests don't bleed into each other.
     """
+    from app import limiter
+    limiter.reset()
     import modules.scout.routes as routes_module
     routes_module._chain = None
     return app.test_client()
